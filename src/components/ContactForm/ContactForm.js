@@ -1,63 +1,106 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { contactsOperations } from 'redux/contacts';
-import { LabelInput, Input, Button } from './ContactForm.styled';
-
-export default function ContactForm() {
+import { useSelector, useDispatch } from 'react-redux';
+import { contactsOperations, contactsSelectors } from '../../redux/contacts';
+import { toast } from 'react-toastify';
+import NumberFormat from 'react-number-format';
+import Button from '@material-ui/core/Button';
+import LoaderComponent from '../LoaderComponent';
+import s from './ContactForm.module.css';
+import TextField from '@material-ui/core/TextField';
+function ContactForm({ onClose }) {
+  const dispatch = useDispatch();
+  const contacts = useSelector(contactsSelectors.getContacts);
+  const isLoading = useSelector(contactsSelectors.getLoading);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-  const dispatch = useDispatch();
 
   const handleChange = e => {
-    switch (e.target.name) {
+    const { name, value } = e.target;
+
+    switch (name) {
       case 'name':
-        setName(e.target.value);
+        setName(value);
         break;
+
       case 'number':
-        setNumber(e.target.value);
+        setNumber(value);
         break;
+
       default:
         return;
     }
   };
 
-  const resetState = () => {
-    setName('');
-    setNumber('');
+  const checkRepeatName = name => {
+    return contacts.find(
+      contact => contact.name.toLowerCase() === name.toLowerCase(),
+    );
+  };
+
+  const checkRepeatNumber = number => {
+    return contacts.find(contact => contact.number === number);
+  };
+
+  const checkEmptyQuery = (name, number) => {
+    return name.trim() === '' || number.trim() === '';
   };
 
   const handleSubmit = e => {
     e.preventDefault();
-    dispatch(contactsOperations.addContact({ name, number }));
-    resetState();
+    if (checkRepeatName(name)) {
+      return toast(`${name} is already in the phonebook.`);
+    } else if (checkRepeatNumber(number)) {
+      return toast(`🤔 ${number} is already in the phonebook.`);
+    } else if (checkEmptyQuery(name, number)) {
+      return toast.info("Enter the contact's");
+    } else {
+      dispatch(contactsOperations.addContact(name, number));
+    }
+    resetInput();
   };
+
+  const resetInput = () => {
+    setName('');
+    setNumber('');
+    onClose();
+  };
+
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <LabelInput>Name</LabelInput>
-        <Input
-          type="text"
-          name="name"
-          value={name}
-          onChange={handleChange}
-          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-          title="Имя может состоять только из букв, апострофа, тире и пробелов. Например Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan и т. п."
-          required
-        />
+    <form className={s.form} onSubmit={handleSubmit}>
+      <TextField
+        label="Name"
+        variant="outlined"
+        color="primary"
+        type="text"
+        name="name"
+        fullWidth
+        value={name}
+        onChange={handleChange}
+        className={s.textField}
+      />
+      <TextField
+        label="Number"
+        variant="outlined"
+        color="primary"
+        type="phone"
+        name="number"
+        fullWidth
+        value={number}
+        onChange={handleChange}
+        className={s.textField}
+      />
 
-        <LabelInput>Number</LabelInput>
-        <Input
-          type="tel"
-          name="number"
-          value={number}
-          onChange={handleChange}
-          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-          title="Номер телефона должен состоять цифр и может содержать пробелы, тире, круглые скобки и может начинаться с +"
-          required
-        />
-
-        <Button type="submit">Add contact</Button>
-      </form>
-    </div>
+      <Button
+        variant="contained"
+        color="primary"
+        size="large"
+        fullWidth
+        type="submit"
+      >
+        Add contact
+      </Button>
+    </form>
   );
 }
+
+export default ContactForm;

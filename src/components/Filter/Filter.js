@@ -1,25 +1,30 @@
-import PropTypes from 'prop-types';
-import { Input, LabelInput } from '../ContactForm/ContactForm.styled';
-import { contactsSelectors, contactsActions } from 'redux/contacts';
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { contactsActions, contactsSelectors } from '../../redux/contacts';
 
-export default function Filter() {
-  const value = useSelector(contactsSelectors.getFilter);
+import TextField from '@material-ui/core/TextField';
+
+function Filter() {
   const dispatch = useDispatch();
-  const onChangeHandler = e => dispatch(contactsActions.changeFilter(e.target.value));
-  const onBlurHandler = () =>
-    dispatch(contactsActions.changeFilter(''));
+  const filter = useSelector(contactsSelectors.getFilter);
+  const contacts = useSelector(contactsSelectors.getContacts);
 
   return (
-    <label>
-      <LabelInput>Find contact by name</LabelInput>
-      <Input type="text" value={value} onChange={onChangeHandler} onBlur={onBlurHandler} />
-    </label>
+    <>
+      {contacts.length > 0 && (
+        <TextField
+          label="Filter"
+          variant="outlined"
+          type="text"
+          value={filter}
+          fullWidth
+          color="primary"
+          onChange={e =>
+            dispatch(contactsActions.filterContact(e.target.value))
+          }
+        />
+      )}
+    </>
   );
 }
 
-Filter.propTypes = {
-  value: PropTypes.string,
-  onChange: PropTypes.func,
-};
+export default Filter;
